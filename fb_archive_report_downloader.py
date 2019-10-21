@@ -4,13 +4,16 @@
 import os
 import time
 import json
+import io
+import traceback
 from selenium import webdriver
-from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
+from slack_notifier import notify_slack
 
 FB_COUNTRY_SELECTOR_CSS_CLASS = ".\\_7vg0"
 FB_DOWNLOAD_BUTTON_CSS_CLASS = ".\\_7vio"
@@ -36,20 +39,30 @@ class FacebookArchiveReportDownloader():
     def set_country(self, country):
         self.driver.find_element(
             By.CSS_SELECTOR, FB_COUNTRY_SELECTOR_CSS_CLASS).click()
-        self.driver.find_element(By.LINK_TEXT, country).click()
+        elem = self.driver.find_element(By.XPATH, f"//a[contains(text(),\'{country}\')]")
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", elem)
+        elem.click()
 
-    def download_all_reports(self):
+    def download_all_reports(self, country):
         for time_span, css_selector in time_frames_to_css_selectors.items():
             try:
+                time_span = None
+                self.set_country(country)
                 self.driver.find_element(By.CSS_SELECTOR, css_selector).click()
                 time.sleep(1)
-                self.driver.find_element(
-                    By.CSS_SELECTOR, FB_DOWNLOAD_BUTTON_CSS_CLASS).click()
+                elem = self.driver.find_element(
+                    By.CSS_SELECTOR, FB_DOWNLOAD_BUTTON_CSS_CLASS)
+                self.driver.execute_script("arguments[0].scrollIntoView(true);", elem)
+                elem.click()
                 time.sleep(1)
-            except ElementClickInterceptedException:
-                driver.save_screenshot(os.path.join(
+            except (ElementClickInterceptedException, NoSuchElementException) as e:
+                trace = io.StringIO()
+                traceback.print_exc(file=trace)
+                trace = trace.getvalue()
+                self.driver.save_screenshot(os.path.join(
                     self.download_dir, f'{time_span}_Error.png'))
-                print(f"Could not download data for time span: {time_span}")
+                # notify_slack(f"Could not download data for {country} time span: {time_span}:\n{trace}")
+                raise RuntimeError(f"Could not download data for {country} time span: {time_span}:\n{trace}")
 
 
     def get_headless_driver_with_downloads(self, path, webdriver_executable_path):
@@ -81,6 +94,5 @@ if __name__ == "__main__":
     download_dir = "/home/divam/projects/fb_report_collector/"
     archive_downloader = FacebookArchiveReportDownloader(download_dir)
     # Country must match the string on the webpage drop down.
-    archive_downloader.set_country("Canada")
-    archive_downloader.download_all_reports()
+    archive_downloader.download_all_reports('Canada')
     archive_downloader.quit_driver()

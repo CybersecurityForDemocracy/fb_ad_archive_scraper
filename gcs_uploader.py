@@ -1,4 +1,5 @@
 import os
+import logging
 from google.cloud import storage
 
 class GCSUploader():
@@ -8,14 +9,12 @@ class GCSUploader():
             credentials_file_path)
         self.bucket = self.storage_client.get_bucket(bucket_name)
 
-    def upload_file(self, source_file_name):
+    def upload_file(self, source_file_name, gcs_file_path):
         """Uploads a file to the bucket."""
-
-        destination_blob_name = os.path.basename(source_file_name)
-        blob = self.bucket.blob(destination_blob_name)
+        blob = self.bucket.blob(gcs_file_path)
 
         blob.upload_from_filename(source_file_name)
 
-        print('File {} uploaded to {}.'.format(
+        logging.info('File {} uploaded to {}.'.format(
             source_file_name,
-            destination_blob_name))
+            gcs_file_path))
