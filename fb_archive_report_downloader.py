@@ -1,16 +1,20 @@
 """ This class downloads facebook ad archive reports """
 # Webdriver code generated using Selenium IDE
 
+import io
 import os
 import time
 import json
+import traceback
 from selenium import webdriver
-from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
+from slack_notifier import notify_slack
+
 
 FB_COUNTRY_SELECTOR_CSS_CLASS = ".\\_7vg0"
 FB_DOWNLOAD_BUTTON_CSS_CLASS = ".\\_7vio"
@@ -39,17 +43,24 @@ class FacebookArchiveReportDownloader():
                 By.CSS_SELECTOR, FB_COUNTRY_SELECTOR_CSS_CLASS).click()
             self.driver.find_element(By.LINK_TEXT, country).click()
 
-    def download_all_reports(self):
-        for time_span, css_selector in time_frames_to_css_selectors.items():
-            try:
+    def download_all_reports(self, country):
+        try:
+            time_span = ''
+            self.set_country(country)
+            for time_span, css_selector in time_frames_to_css_selectors.items():
                 self.driver.find_element(By.CSS_SELECTOR, css_selector).click()
-                time.sleep(1)
+                time.sleep(2)
                 self.driver.find_element(
                     By.CSS_SELECTOR, FB_DOWNLOAD_BUTTON_CSS_CLASS).click()
-                time.sleep(1)
-            except ElementClickInterceptedException:
-                self.driver.save_screenshot(os.path.join(self.download_dir, '{time_span}_Error.png'))
-                print("Could not download data for time span: {time_span}")
+                time.sleep(2)
+        except (ElementClickInterceptedException, NoSuchElementException) as e:
+            trace = io.StringIO()
+            traceback.print_exc(file=trace)
+            trace = trace.getvalue()
+            self.driver.save_screenshot(os.path.join(
+                self.download_dir, '{}_Error.png'.format(time_span)))
+            #LAE - not sure why this isn't getting caught?
+            #raise RuntimeError("Could not download data for {0} time span: {1}:\n{2}".format(country,time_span,trace))
 
 
     def get_headless_driver_with_downloads(self, path, webdriver_executable_path):
