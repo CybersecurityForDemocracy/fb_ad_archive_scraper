@@ -13,7 +13,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
-from slack_notifier import notify_slack
 
 
 FB_COUNTRY_SELECTOR_CSS_CLASS = ".\\_7vg0"
