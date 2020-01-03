@@ -15,7 +15,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 
 
-FB_COUNTRY_SELECTOR_CSS_CLASS = ".\\_7vg0"
 FB_DOWNLOAD_BUTTON_CSS_CLASS = ".\\_7vio"
 time_frames_to_css_selectors = {
     "1_DAY": ".\\_101b:nth-child(1) > .label",
@@ -37,10 +36,15 @@ class FacebookArchiveReportDownloader():
 
     def set_country(self, country):
         #Special case for the United States because that is the page default and does not need to be selected
-        if country != "United States":
-            self.driver.find_element(
-                By.CSS_SELECTOR, FB_COUNTRY_SELECTOR_CSS_CLASS).click()
-            self.driver.find_element(By.LINK_TEXT, country).click()
+        if country == "United States":
+            return
+        # click country selector | xpath=//div[@id='content']/div/div/div/div[2]/div/button/div/div/div/div/div/div |
+        self.driver.find_element(By.XPATH,
+                "//div[@id=\'content\']/div/div/div/div[2]/div/button/div/div/div/div/div/div").click()
+        # type | css=.\_1vdv > .\_58al | country | 
+        self.driver.find_element(By.CSS_SELECTOR, ".\\_1vdv > .\\_58al").send_keys(country)
+        # sendKeys | css=.\_1vdv > .\_58al | ${KEY_ENTER} | 
+        self.driver.find_element(By.CSS_SELECTOR, ".\\_1vdv > .\\_58al").send_keys(Keys.ENTER)
 
     def download_all_reports(self, country):
         try:
@@ -73,7 +77,7 @@ class FacebookArchiveReportDownloader():
             "download.directory_upgrade": True,
             "safebrowsing.enabled": False,
             "safebrowsing.disable_download_protection": True}
-        chrome_options.add_argument("--headless")
+        # chrome_options.add_argument("--headless")
         chrome_options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(
@@ -89,9 +93,8 @@ class FacebookArchiveReportDownloader():
 
 if __name__ == "__main__":
     download_dir = os.getcwd()
-    chrome_driver_path = "/home/divam/projects/fb_report_collector/chromedriver"
+    chrome_driver_path = "/home/divam/projects/ccs2/fb_report_collector/chromedriver"
     archive_downloader = FacebookArchiveReportDownloader(download_dir, chrome_driver_path)
     # Country must match the string on the webpage drop down.
-    archive_downloader.set_country("United States")
-    archive_downloader.download_all_reports()
+    archive_downloader.download_all_reports("Canada")
     archive_downloader.quit_driver()
