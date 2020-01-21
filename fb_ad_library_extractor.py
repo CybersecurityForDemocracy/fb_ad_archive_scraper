@@ -54,7 +54,7 @@ def main(config):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-            exit(f"Usage:python3 {sys.argv[1]} config_file.cfg")
+        exit("Usage:python3 %s config_file.cfg" % sys.argv[1])
 
     config = configparser.ConfigParser()
     config.read(sys.argv[1])
