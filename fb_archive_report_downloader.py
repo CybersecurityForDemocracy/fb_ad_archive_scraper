@@ -77,7 +77,7 @@ class FacebookArchiveReportDownloader():
             "download.directory_upgrade": True,
             "safebrowsing.enabled": False,
             "safebrowsing.disable_download_protection": True}
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         chrome_options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(
