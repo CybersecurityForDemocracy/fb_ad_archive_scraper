@@ -6,6 +6,8 @@ import os
 import time
 import json
 import traceback
+import logging
+
 from selenium import webdriver
 from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
@@ -23,6 +25,8 @@ time_frames_to_css_selectors = {
     "90_DAYS": ".\\_101b:nth-child(4) > .label",
     "ALL_TIME": ".\\_101b:nth-child(5) > .label", }
 
+_COUNTRY_CODE_URL_TEMPLATE = "https://www.facebook.com/ads/archive/report/?country=%(country_code)s"
+
 
 class FacebookArchiveReportDownloader():
     def __init__(self, download_dir, chrome_driver_path):
@@ -35,16 +39,9 @@ class FacebookArchiveReportDownloader():
         self.driver.quit()
 
     def set_country(self, country):
-        #Special case for the United States because that is the page default and does not need to be selected
-        if country == "United States":
-            return
-        # click country selector | xpath=//div[@id='content']/div/div/div/div[2]/div/button/div/div/div/div/div/div |
-        self.driver.find_element(By.XPATH,
-                "//div[@id=\'content\']/div/div/div/div[2]/div/button/div/div/div/div/div/div").click()
-        # type | css=.\_1vdv > .\_58al | country | 
-        self.driver.find_element(By.CSS_SELECTOR, ".\\_1vdv > .\\_58al").send_keys(country)
-        # sendKeys | css=.\_1vdv > .\_58al | ${KEY_ENTER} | 
-        self.driver.find_element(By.CSS_SELECTOR, ".\\_1vdv > .\\_58al").send_keys(Keys.ENTER)
+        url = _COUNTRY_CODE_URL_TEMPLATE % {'country_code': country}
+        logging.info('Getting report page for %s: %s', country, url)
+        self.driver.get(url)
 
     def download_all_reports(self, country):
         try:
@@ -89,12 +86,3 @@ class FacebookArchiveReportDownloader():
             "behavior": "allow", "downloadPath": download_dir}}
         driver.execute("send_command", params)
         return driver
-
-
-if __name__ == "__main__":
-    download_dir = os.getcwd()
-    chrome_driver_path = "/home/divam/projects/ccs2/fb_report_collector/chromedriver"
-    archive_downloader = FacebookArchiveReportDownloader(download_dir, chrome_driver_path)
-    # Country must match the string on the webpage drop down.
-    archive_downloader.download_all_reports("Canada")
-    archive_downloader.quit_driver()
