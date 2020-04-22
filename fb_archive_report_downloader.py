@@ -10,6 +10,7 @@ import logging
 
 from selenium import webdriver
 from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
@@ -29,10 +30,11 @@ _COUNTRY_CODE_URL_TEMPLATE = "https://www.facebook.com/ads/archive/report/?count
 
 
 class FacebookArchiveReportDownloader():
-    def __init__(self, download_dir, chrome_driver_path):
+    def __init__(self, download_dir, chrome_driver_path, chrome_browser_path):
         self.base_url = "https://www.facebook.com/ads/archive/report/"
         self.download_dir = download_dir
-        self.driver = self.get_headless_driver_with_downloads(download_dir, chrome_driver_path)
+        self.driver = self.get_headless_driver_with_downloads(download_dir, chrome_driver_path,
+                                                              chrome_browser_path)
         self.driver.get(self.base_url)
 
     def quit_driver(self):
@@ -63,11 +65,13 @@ class FacebookArchiveReportDownloader():
             #raise RuntimeError("Could not download data for {0} time span: {1}:\n{2}".format(country,time_span,trace))
 
 
-    def get_headless_driver_with_downloads(self, path, webdriver_executable_path):
+    def get_headless_driver_with_downloads(self, path, webdriver_executable_path,
+                                           chrome_browser_path):
         # This works around https://bugs.chromium.org/p/chromium/issues/detail?id=696481
         # Using https://github.com/shawnbutton/PythonHeadlessChrome as a reference
         download_dir = path or os.getcwd()
-        chrome_options = webdriver.ChromeOptions()
+        chrome_options = Options()
+        chrome_options.binary_location = chrome_browser_path
         prefs = {
             "download.default_directory": download_dir,
             "download.prompt_for_download": False,

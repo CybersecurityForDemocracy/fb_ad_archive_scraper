@@ -17,9 +17,14 @@ logging.basicConfig(handlers=[logging.FileHandler("ad_library_report_collection.
                     format='[%(levelname)s\t%(asctime)s] {%(pathname)s:%(lineno)d} %(message)s',
                     level=logging.INFO)
 
+CHROME_DRIVER_PATH = '/usr/bin/chromedriver'
+CHROME_BROWSER_PATH = '/usr/bin/chromium-browser'
+
 
 def download_reports(scratch_dir, country):
-    scraper = fb_archive_report_downloader.FacebookArchiveReportDownloader(scratch_dir, "./chromedriver")
+    scraper = fb_archive_report_downloader.FacebookArchiveReportDownloader(
+            scratch_dir, chrome_driver_path=CHROME_DRIVER_PATH,
+            chrome_browser_path=CHROME_BROWSER_PATH)
     scraper.download_all_reports(country)
     scraper.quit_driver()
 
